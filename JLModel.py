@@ -2,10 +2,12 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_restless import APIManager
 
+import datetime
+
 
 app = Flask(__name__)
 app.config[
-    'SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:root@localhost:3306/test'
+    'SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:root@localhost:3306/NewsDB'
 db = SQLAlchemy(app)
 mysession = db.session()
 restless = APIManager(app, flask_sqlalchemy_db=db)
@@ -24,6 +26,8 @@ class News(db.Model):
     keywords = db.Column(db.String(255), nullable=False)
     content = db.Column(db.TEXT, nullable=False)
     images = db.Column(db.TEXT, nullable=False)
+    datetime = db.Column(db.String(255), nullable=False)
+    source = db.Column(db.String(255), nullable=False)
 
     @classmethod  # 类方法
     def get_all_news(cls):
@@ -37,6 +41,8 @@ class News(db.Model):
     def __init__(self, soup, url):
         self.soup = soup
         self.url = url
+        self.source_date_div = soup.find(
+            'div', {'class': 'ep-time-soure cDGray'})
         self.__parse__()
 
     def __parse__(self):
@@ -45,12 +51,11 @@ class News(db.Model):
         self.keywords = self.soup.find(
             'meta', attrs={'name': 'keywords'})['content']
         self.content = self.__get_content__(self.soup)
+        self.datetime = self.__get_datetime__(self.source_date_div)
+        self.source = self.__get_source__(self.source_date_div)
 
     def __get_title__(self, soup):
         return soup.title.string[0:len(soup.title.string) - 7]
-
-    def __get_source__(self, soup):
-        pass
 
     def __get_content__(self, soup):
         # return soup.find('div', id='endText')
@@ -76,6 +81,13 @@ class News(db.Model):
 
     def __get_description__(self, content):
         pass
+
+    def __get_datetime__(self, div):
+        datetime_str = div.get_text(strip=True)[0:19]
+        return datetime.datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+
+    def __get_source__(self, div):
+        return div.a.get_text()
 
     def add(self):
         mysession.add(self)

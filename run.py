@@ -12,7 +12,7 @@ g_threads = []
 inital_url = 'http://news.163.com/'
 
 g_queue.put(inital_url)
-g_threadpool = ThreadPool(51, g_threads, g_queue, g_visited, g_news)
+g_threadpool = ThreadPool(11, g_threads, g_queue, g_visited, g_news)
 g_threadpool.start()
 # run server
 # JLServer.run()
